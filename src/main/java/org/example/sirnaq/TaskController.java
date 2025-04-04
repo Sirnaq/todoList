@@ -2,7 +2,9 @@ package org.example.sirnaq;
 
 import org.example.sirnaq.model.Task;
 import org.example.sirnaq.repository.TaskRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -26,17 +28,17 @@ public class TaskController {
 
     @PutMapping("/tasks/{id}")
     public Task updateTask(@PathVariable Long id, @RequestBody Task updatedTask) {
-        if(!taskRepository.existsById(id)){
-            throw new RuntimeException("Task not found");
+        if (!taskRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");
         }
         updatedTask.setId(id); // Upewniamy się że ID się zgadza
         return taskRepository.save(updatedTask);
     }
-    
+
     @DeleteMapping("/tasks/{id}")
     public void deleteTask(@PathVariable Long id) {
-        if(!taskRepository.existsById(id)){
-            throw new RuntimeException("Task not found");
+        if (!taskRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");
         }
         taskRepository.deleteById(id);
     }
