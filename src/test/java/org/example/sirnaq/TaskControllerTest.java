@@ -44,7 +44,7 @@ public class TaskControllerTest {
 
     @Test
     public void testUpdateTask() throws Exception {
-        // Dodajemy zadanie do bazy
+        //Dodajemy zadanie do bazy
         taskRepository.save(new Task(1L, "Old Task", false));
 
         //put - modyfikuj zadanie
@@ -54,18 +54,24 @@ public class TaskControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated task"))
                 .andExpect(jsonPath("$.completed").value(true));
+
+        //sprawdzamy czy zadanie zostało zmodysikowane
+        mockMvc.perform(get("/tasks"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Updated task"))
+                .andExpect(jsonPath("$.completed").value(true));
     }
 
     @Test
     public void testTaskToDelete() throws Exception {
-        // Dodajemy zadanie do bazy
+        //Dodajemy zadanie do bazy
         taskRepository.save(new Task(1L, "Task to delete", false));
 
         //delete - usuwamy zadanie
         mockMvc.perform(delete("/tasks/1"))
                 .andExpect(status().isNoContent());
 
-        // Sprawdzamy czy zadanie zostało usunięte
+        //Sprawdzamy czy zadanie zostało usunięte
         mockMvc.perform(get("/tasks"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("[]"));
