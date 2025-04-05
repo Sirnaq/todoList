@@ -36,6 +36,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/tasks/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTask(@PathVariable Long id) {
         if (!taskRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");

@@ -57,18 +57,34 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void taskToDelete() throws Exception {
+    public void testTaskToDelete() throws Exception {
         // Dodajemy zadanie do bazy
         taskRepository.save(new Task(1L, "Task to delete", false));
 
         //delete - usuwamy zadanie
         mockMvc.perform(delete("/tasks/1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         // Sprawdzamy czy zadanie zostało usunięte
         mockMvc.perform(get("/tasks"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("[]"));
+    }
+
+    @Test
+    public void testUpdateTaskNotFound() throws Exception {
+        //modyfikujemy zadanie które nie istnieje
+        mockMvc.perform(put("/tasks/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\": 999,\"title\": \"Non-existent\", \"completed\": false}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testDeleteTaskNotFound() throws Exception {
+        //usuwamy zadanie które nie istnieje
+        mockMvc.perform(delete("/tasks/999"))
+                .andExpect(status().isNotFound());
     }
 
 
