@@ -2,14 +2,18 @@ package org.example.sirnaq.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 public class Task {
 
     @Id
     private Long id;
+    @NotNull(message="Title cannot be null!")
     private String title;
     private boolean completed;
+
+    //Konstruktory gettery i settery
 
     public Task() {} // Domyślny konstruktor wymagany przez JPA
 

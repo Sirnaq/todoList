@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -24,10 +25,10 @@ public class TaskControllerTest {
 
     @Test
     public void testCreateAndGetTask() throws Exception {
-        //Czyszczenie bazy przed testem
+        //czyszczenie bazy przed testem
         taskRepository.deleteAll();
 
-        //Post - dodaj zadanie
+        //post - dodaj zadanie
         mockMvc.perform(post("/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\": 1, \"title\": \"Test Task\", \"completed\": false}"))
@@ -44,7 +45,10 @@ public class TaskControllerTest {
 
     @Test
     public void testUpdateTask() throws Exception {
-        //Dodajemy zadanie do bazy
+        //czyszczenie bazy przed testem
+        taskRepository.deleteAll();
+
+        //dodajemy zadanie do bazy
         taskRepository.save(new Task(1L, "Old Task", false));
 
         //put - modyfikuj zadanie
@@ -59,19 +63,23 @@ public class TaskControllerTest {
         mockMvc.perform(get("/tasks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").value("Updated task"))
-                .andExpect(jsonPath("$.completed").value(true));
+                .andExpect(jsonPath("$[0].completed").value(true));
     }
 
     @Test
     public void testTaskToDelete() throws Exception {
-        //Dodajemy zadanie do bazy
+
+        //czyszczenie bazy przed testem
+        taskRepository.deleteAll();
+
+        //dodajemy zadanie do bazy
         taskRepository.save(new Task(1L, "Task to delete", false));
 
         //delete - usuwamy zadanie
         mockMvc.perform(delete("/tasks/1"))
                 .andExpect(status().isNoContent());
 
-        //Sprawdzamy czy zadanie zostało usunięte
+        //sprawdzamy czy zadanie zostało usunięte
         mockMvc.perform(get("/tasks"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("[]"));
@@ -79,6 +87,9 @@ public class TaskControllerTest {
 
     @Test
     public void testUpdateTaskNotFound() throws Exception {
+        //czyszczenie bazy przed testem
+        taskRepository.deleteAll();
+
         //modyfikujemy zadanie które nie istnieje
         mockMvc.perform(put("/tasks/999")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -88,9 +99,49 @@ public class TaskControllerTest {
 
     @Test
     public void testDeleteTaskNotFound() throws Exception {
+        //czyszczenie bazy przed testem
+        taskRepository.deleteAll();
+
         //usuwamy zadanie które nie istnieje
         mockMvc.perform(delete("/tasks/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testPostTaskValidation() throws Exception {
+        //czyszczenie bazy przed testem
+        taskRepository.deleteAll();
+
+        //dodajemy zadanie bez nazwy
+        mockMvc.perform(post("/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\": 1, \"completed\": true}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testGetFilteredResult() throws Exception {
+        //czyszczenie bazy przed testem
+        taskRepository.deleteAll();
+
+        //dodajemy dwa zadania do bazy
+        taskRepository.save(new Task(0L, "Completed task", true));
+        taskRepository.save(new Task(1L, "Uncompleted task", false));
+
+        //get - sprawdzamy przefiltrowane wyniki - zakończone
+        mockMvc.perform(get("/tasks?completed=true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$",hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("Completed task"))
+                .andExpect(jsonPath("$[0].completed").value(true));
+
+        //get - sprawdzamy przefiltrowane wyniki - niezakończone
+        mockMvc.perform(get("/tasks?completed=false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$",hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("Uncompleted task"))
+                .andExpect(jsonPath("$[0].completed").value(false));
+
     }
 
 
