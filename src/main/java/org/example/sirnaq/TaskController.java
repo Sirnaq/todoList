@@ -1,5 +1,6 @@
 package org.example.sirnaq;
 
+import jakarta.validation.Valid;
 import org.example.sirnaq.model.Task;
 import org.example.sirnaq.repository.TaskRepository;
 import org.springframework.http.HttpStatus;
@@ -17,17 +18,20 @@ public class TaskController {
     }
 
     @GetMapping("/tasks")
-    public List<Task> getTasks() {
+    public List<Task> getTasks(@RequestParam(required = false) Boolean completed) {
+        if(completed != null){
+            return taskRepository.findByCompleted(completed);
+        }
         return taskRepository.findAll();
     }
 
     @PostMapping("/tasks")
-    public Task createTask(@RequestBody Task task) {
+    public Task createTask(@Valid @RequestBody Task task) {
         return taskRepository.save(task);
     }
 
     @PutMapping("/tasks/{id}")
-    public Task updateTask(@PathVariable Long id, @RequestBody Task updatedTask) {
+    public Task updateTask(@PathVariable Long id, @Valid @RequestBody Task updatedTask) {
         if (!taskRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");
         }
