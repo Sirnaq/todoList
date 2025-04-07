@@ -3,13 +3,20 @@ package org.example.sirnaq;
 import org.example.sirnaq.model.Task;
 import org.example.sirnaq.repository.TaskRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -23,24 +30,51 @@ public class TaskControllerTest {
     @Autowired
     private TaskRepository taskRepository;
 
-    @Test
-    public void testCreateAndGetTask() throws Exception {
-        //czyszczenie bazy przed testem
-        taskRepository.deleteAll();
+    @MockBean
+    private RabbitTemplate rabbitTemplate;
 
-        //post - dodaj zadanie
+    @Test
+    public void testCreateTask() throws Exception {
+        // Wykonaj żądanie POST
         mockMvc.perform(post("/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\": 1, \"title\": \"Test Task\", \"completed\": false}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Test Task"));
 
-        //get - sprawdź listę zadań
+        // Przechwyć argument przekazany do RabbitTemplate
+        ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
+        Mockito.verify(rabbitTemplate).convertAndSend(eq(RabbitMQConfig.TASK_QUEUE), taskCaptor.capture());
+
+        // Sprawdź wartości pól przechwyconego obiektu
+        Task capturedTask = taskCaptor.getValue();
+        assertEquals(1L, capturedTask.getId());
+        assertEquals("Test Task", capturedTask.getTitle());
+        assertFalse(capturedTask.isCompleted());
+    }
+
+
+    @Test
+    public void testCreateAndGetTask() throws Exception {
+        // Czyszczenie bazy przed testem
+        taskRepository.deleteAll();
+
+        // POST - dodaj zadanie
+        Task task = new Task(1L, "Test Task", false);
+        mockMvc.perform(post("/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\": 1, \"title\": \"Test Task\", \"completed\": false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Test Task"));
+
+        // Symulujemy zapis zadania do bazy (konsument RabbitMQ)
+        taskRepository.save(task);
+
+        // GET - sprawdź listę zadań
         mockMvc.perform(get("/tasks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").value("Test Task"))
                 .andExpect(jsonPath("$[0].completed").value(false));
-
     }
 
     @Test
@@ -131,14 +165,14 @@ public class TaskControllerTest {
         //get - sprawdzamy przefiltrowane wyniki - zakończone
         mockMvc.perform(get("/tasks?completed=true"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$",hasSize(1)))
+                .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].title").value("Completed task"))
                 .andExpect(jsonPath("$[0].completed").value(true));
 
         //get - sprawdzamy przefiltrowane wyniki - niezakończone
         mockMvc.perform(get("/tasks?completed=false"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$",hasSize(1)))
+                .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].title").value("Uncompleted task"))
                 .andExpect(jsonPath("$[0].completed").value(false));
 

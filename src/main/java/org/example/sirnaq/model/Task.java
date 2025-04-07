@@ -4,8 +4,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotNull;
 
+import java.io.Serializable;
+
 @Entity
-public class Task {
+public class Task implements Serializable {
 
     @Id
     private Long id;
