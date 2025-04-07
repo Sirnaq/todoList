@@ -3,6 +3,7 @@ package org.example.sirnaq;
 import jakarta.validation.Valid;
 import org.example.sirnaq.model.Task;
 import org.example.sirnaq.repository.TaskRepository;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,14 +13,16 @@ import java.util.List;
 @RestController
 public class TaskController {
     private final TaskRepository taskRepository;
+    private final RabbitTemplate rabbitTemplate;
 
-    public TaskController(TaskRepository taskRepository) {
+    public TaskController(TaskRepository taskRepository, RabbitTemplate rabbitTemplate) {
         this.taskRepository = taskRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @GetMapping("/tasks")
     public List<Task> getTasks(@RequestParam(required = false) Boolean completed) {
-        if(completed != null){
+        if (completed != null) {
             return taskRepository.findByCompleted(completed);
         }
         return taskRepository.findAll();
@@ -27,7 +30,8 @@ public class TaskController {
 
     @PostMapping("/tasks")
     public Task createTask(@Valid @RequestBody Task task) {
-        return taskRepository.save(task);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.TASK_QUEUE, task);
+        return task;
     }
 
     @PutMapping("/tasks/{id}")
