@@ -12,17 +12,34 @@ public class TaskConsumer {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskConsumer.class);
     private final TaskRepository taskRepository;
+    private final TaskWebSocketHandler webSocketHandler;
 
-    public TaskConsumer(TaskRepository taskRepository) {
+    public TaskConsumer(TaskRepository taskRepository, TaskWebSocketHandler webSocketHandler) {
         this.taskRepository = taskRepository;
+        this.webSocketHandler = webSocketHandler;
     }
 
     @RabbitListener(queues = RabbitMQConfig.TASK_QUEUE)
-    public void ReceiveTask(Task task) {
-
-        logger.info("Received task: {}", task.getTitle());
-        taskRepository.save(task);
-        logger.info("Task saved: {}", task.getTitle());
+    public void receiveTask(Task task) {
+        logger.info("Received task: {} (ID: {})", task.getTitle(), task.getId());
+        Task existingTask = taskRepository.findById(task.getId()).orElseGet(() -> {
+            logger.warn("Task with ID {} not found, creating new", task.getId());
+            return new Task();
+        });
+        existingTask.setId(task.getId());
+        existingTask.setTitle(task.getTitle());
+        existingTask.setCompleted(task.isCompleted());
+        try {
+            taskRepository.save(existingTask);
+            logger.info("Task saved: {} (ID: {})", existingTask.getTitle(), existingTask.getId());
+        } catch (Exception e) {
+            logger.error("Failed to save task: {}", task.getTitle(), e);
+        }
+        try {
+            webSocketHandler.sendTaskUpdate(task.getId());
+        } catch (Exception e) {
+            logger.error("Failed to send WebSocket update", e);
+        }
     }
 
 }
