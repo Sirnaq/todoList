@@ -12,10 +12,16 @@ import java.util.List;
 @Configuration
 public class RabbitMQConfig {
     public static final String TASK_QUEUE = "task-queue";
+    public static final String DELETE_QUEUE = "delete-queue";
 
     @Bean
     public Queue taskQueue() {
         return new Queue(TASK_QUEUE, true); //trwała kolejka
+    }
+
+    @Bean
+    public Queue deleteQueue(){
+        return new Queue(DELETE_QUEUE, true); //kolejka na delete
     }
 
     @Bean

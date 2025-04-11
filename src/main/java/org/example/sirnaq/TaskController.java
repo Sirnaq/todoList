@@ -18,7 +18,7 @@ import java.util.Map;
 public class TaskController {
     private final TaskRepository taskRepository;
     private final RabbitTemplate rabbitTemplate;
-    private static final Logger logger = LoggerFactory.getLogger(TaskConsumer.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskController.class);
 
     public TaskController(TaskRepository taskRepository, RabbitTemplate rabbitTemplate) {
         this.taskRepository = taskRepository;
@@ -50,11 +50,11 @@ public class TaskController {
 
     @DeleteMapping("/tasks/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTask(@PathVariable Long id) {
-        if (!taskRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");
-        }
-        taskRepository.deleteById(id);
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+        rabbitTemplate.convertAndSend(RabbitMQConfig.DELETE_QUEUE,task);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/tasks/{id}/status")

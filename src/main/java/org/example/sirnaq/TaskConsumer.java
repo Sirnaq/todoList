@@ -36,7 +36,7 @@ public class TaskConsumer {
             logger.error("Failed to save task: {}", task.getTitle(), e);
         }
         try {
-            webSocketHandler.sendTaskUpdate(task.getId());
+            webSocketHandler.sendTaskUpdate(task.getId(), "taskUpdated");
         } catch (Exception e) {
             logger.error("Failed to send WebSocket update", e);
         }

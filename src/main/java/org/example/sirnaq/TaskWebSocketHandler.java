@@ -28,8 +28,8 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
         logger.info("WebSocket session closed: {} (status: {})", session.getId(), status);
     }
 
-    public void sendTaskUpdate(Long taskId) throws Exception {
-        String message = "{\"event\": \"taskUpdated\", \"id\":" + taskId + "}";
+    public void sendTaskUpdate(Long taskId, String eventType) throws Exception {
+        String message = "{\"event\": \""+eventType+"\", \"id\":" + taskId + "}";
         logger.info("Sending WebSocket update: {}", message);
         if (sessions.isEmpty()) {
             logger.warn("No WebSocket sessions connected");
