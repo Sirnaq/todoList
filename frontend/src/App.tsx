@@ -17,28 +17,51 @@ const App: React.FC = () => {
 
     //pobierz zadania przy załadowaniu
     useEffect(() => {
-        if (!wsRef.current){
-            const ws = new WebSocket(WS_URL);
-            ws.onopen = () => console.log('Websocket connected');
-            ws.onmessage = (event) => {
-                console.log('WebSocket message reveived: ', event.data);
-                const data = JSON.parse(event.data);
-                if (data.event === 'taskUpdated'){
-                    console.log('Task updated, fetching tasks');
-                    fetchTasks();
-                }
-            };
-        ws.onerror = (error) => console.error('Websocket error:', error);
-        ws.onclose = () => console.log('WebSocket closed');
-        }
-
+        console.log('useEffect started at', new Date().toISOString());
         fetchTasks();
+    
+        const connectWebSocket = () => {
+            if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+                console.log('Attempting to connect WebSocket to', WS_URL);
+                const ws = new WebSocket(WS_URL);
+                wsRef.current = ws;
+    
+                ws.onopen = () => {
+                    console.log('WebSocket connected successfully at', new Date().toISOString());
+                };
+                ws.onmessage = (event) => {
+                    console.log('WebSocket message received:', event.data);
+                    const data = JSON.parse(event.data);
+                    if (data.event === 'taskUpdated' || data.event === 'taskDeleted') {
+                        console.log('Task updated or deleted, fetching tasks');
+                        fetchTasks();
+                    }
+                };
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                ws.onclose = (event) => {
+                    console.log('WebSocket closed with code:', event.code, 'reason:', event.reason, 'at', new Date().toISOString());
+                    if (event.code !== 1000) {
+                        console.log('Reconnecting WebSocket in 1s');
+                        setTimeout(connectWebSocket, 1000);
+                    }
+                };
+            } else {
+                console.log('WebSocket already exists, state:', wsRef.current.readyState);
+            }
+        };
+    
+        const initialTimeout = setTimeout(connectWebSocket, 100); // Opóźnienie 100ms
+    
         return () => {
-            if (wsRef.current) {
+            console.log('Cleaning up WebSocket at', new Date().toISOString());
+            clearTimeout(initialTimeout);
+            if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
                 wsRef.current.close();
             }
         };
-    },[]);
+    }, []);
 
     const fetchTasks = async () =>{
         try {
@@ -78,6 +101,16 @@ const App: React.FC = () => {
         }
     }
 
+    const handleDelete = async (id: number) => {
+        try{
+            await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE'
+            })
+        } catch (error) {
+            console.error('Błąd przy usuwaniu zadania: ', error)
+        }
+    }
+
 
     return(
     <div className="app">
@@ -100,7 +133,8 @@ const App: React.FC = () => {
                     checked={task.completed}
                     onChange={() => handleToggleComplete(task.id, task.completed)}
                 />
-            {task.title} (Zakończone: {task.completed ? 'Tak' : 'Nie'})
+                {task.title} (Zakończone: {task.completed ? 'Tak' : 'Nie'})
+                <button onClick={() => handleDelete(task.id)}>Usuń</button>
             </li>
             ))}
         </ul>
