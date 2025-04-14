@@ -1,5 +1,7 @@
 import React, {useEffect, useState, useRef} from 'react';
 import './App.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 interface Task {
     id: number;
@@ -114,30 +116,52 @@ const App: React.FC = () => {
 
     return(
     <div className="app">
-        <h1>Lista Zadań</h1>
-        <form onSubmit={handleSubmit}>
-        <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Wpisz zadanie"
-            required
-        />
-        <button type="submit">Dodaj</button>
-        </form>
-        <ul>
-        {tasks.map((task)=>(
-            <li key={task.id}>
+        <div className='app-container'>
+            <h1>Lista Zadań</h1>
+            <form onSubmit={handleSubmit} className="task-form">
                 <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => handleToggleComplete(task.id, task.completed)}
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Wpisz zadanie"
+                    required
+                    className="task-input"
+                    data-testid="task-input"
                 />
-                {task.title} (Zakończone: {task.completed ? 'Tak' : 'Nie'})
-                <button onClick={() => handleDelete(task.id)}>Usuń</button>
-            </li>
-            ))}
-        </ul>
+                <button
+                    type="submit"
+                    className="task-button"
+                    data-testid="add-task-button"
+                >
+                    Dodaj
+                </button>
+            </form>
+            <ul className='task-list'>
+                {tasks.map((task)=>(
+                    <li
+                        key={task.id}
+                        className={`task-item ${task.completed ? 'completed' : ''}`}
+                        data-testid={`task-${task.id}`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={() => handleToggleComplete(task.id, task.completed)}
+                            data-testid={`task-checkbox-${task.id}`}
+                        />
+                        <span>{task.title}</span>
+                        (Zakończone: {task.completed ? 'Tak' : 'Nie'})
+                        <button
+                            className='dlete-button'
+                            onClick={() => handleDelete(task.id)}
+                            data-testid={`delete-task-${task.id}`}
+                        >
+                                <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                    </li>
+                    ))}
+            </ul>
+        </div>
     </div>
     );
 };
