@@ -27,3 +27,78 @@ li {
     padding: 10px;
     border-bottom: 1px solid #ddd;
 }
+.task-form {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    max-width: 500px;
+}
+.task-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+}
+.task-input:focus {
+    border-color: #007bff;
+}
+.task-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.task-button:hover {
+    background-color: #0056b3;
+}
+.task-list {
+    list-style: none;
+    padding: 0;
+    max-width: 500px;
+}
+
+.task-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.task-item.completed {
+    text-decoration: line-through;
+    background-color: #e0e0e0;
+}
+
+.task-item span {
+    flex: 1;
+}
+
+.delete-button {
+    padding: 5px;
+    background-color: transparent;
+    color: #dc3545;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.delete-button:hover {
+    color: #c82333;
+}
+.app-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background-color: #fff;
+}
